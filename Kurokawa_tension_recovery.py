@@ -88,14 +88,82 @@ Kurokawa_Tension = [
     17.732379979570993
 ] # in N
 
+EMG = [
+    0.011480568075516626,
+    0.019219321370864868,
+    0.02729823964622842,
+    0.05646738668254103,
+    0.06386597499787397,
+    0.12143889786546476,
+    0.18198826430818948,
+    0.2982396462284208,
+    0.44587124755506424,
+    0.6543923803044477,
+    0.7496385747087337,
+    0.7725146696147632,
+    0.7212347988774556,
+    0.6042180457521898,
+    0.31337698783910195,
+    0.07194489327323751,
+    0.07237009949825665
+] # Normalized to maximum EMG during the squat-jump
+
 params = {
     "kT" : 0.0047,
     "cT" : 27.8,
-    "F_MAX" : 3000,
+    "F_MAX" : 1000,
     "lTo" : 0.45,
-    "To" : 80
+    "To" : 80,
+    "lo" : 0.06,
+    "β" : 1.55,
+    "ω" : 0.75,
+    "ρ" : 2.12,
+    "V_max" : -9.15,
+    "cv0" : -5.78,
+    "cv1" : 9.18,
+    "av0" : -1.53,
+    "av1" : 0,
+    "av2" : 0,
+    "bv" : 0.69,
+    "c_1" : 23.0,
+    "k_1" : 0.046,
+    "Lr1" : 1.17,
+    "η" : 0.01,
+    "L_CE_max" : 1.2,
+    "bm" : 0.01,
+    "m" : 0.5
 }
-
+def FL(l,**params):
+    lo = params.get("lo",0.06)
+    β = params.get("β",1.55)
+    ω = params.get("ω",0.75)
+    ρ = params.get("ρ",2.12)
+    return(
+        np.exp(-abs(((l/lo)**β-1)/ω)**ρ)
+    )
+def FV(l,v,**params):
+    V_max = params.get("V_max", -9.15)
+    cv0 = params.get("cv0", -5.78)
+    cv1 = params.get("cv1", 9.18)
+    av0 = params.get("av0", -1.53)
+    av1 = params.get("av1", 0)
+    av2 = params.get("av2", 0)
+    bv = params.get("bv", 0.69)
+    lo = params.get("lo",0.06)
+    if v<=0:
+        return((V_max - v/lo)/(V_max + (cv0 + cv1*(l/lo))*(v/lo)))
+    else:
+        return((bv-(av0 + av1*(l/lo) + av2*(l/lo)**2)*(v/lo))/(bv + (v/lo)))
+def FLV(l,v,**params):
+	return(FL(l,**params)*FV(l,v,**params))
+def F_PE1(l,v,**params):
+    c_1 = params.get("c_1", 23.0)
+    k_1 = params.get("k_1", 0.046)
+    lo = params.get("lo", 0.06)
+    L_CE_max = params.get("L_CE_max", 1.2)
+    Lr1 = params.get("Lr1", 1.17)
+    η = params.get("η", 0.01)
+    return(c_1*k_1*np.log(np.exp((l/(lo*L_CE_max) - Lr1)/k_1) + 1) + η*(v/lo))
 def return_tension_from_muscle_length(
         MuscleLength,
         MusculotendonLength,
@@ -140,6 +208,47 @@ def return_tension_from_muscle_length(
         )
     )
     return(Recovered_Tension)
+def return_muscle_activation_from_tension_and_muscle_length(
+        Time,
+        Tension,
+        MuscleLength,
+        Pennation,
+        **params
+        ):
+    F_MAX = params.get("F_MAX",1000)
+    m = params.get("m",0.5)
+    bm = params.get("bm",0.01)
+
+    MuscleVelocity = np.gradient(MuscleLength,Time[1]-Time[0])
+    MuscleAcceleration = np.gradient(MuscleVelocity,Time[1]-Time[0])
+
+    Activation = np.array(
+        list(
+            map(
+                lambda l,v,a,p,T: (
+                    (
+                        T*np.cos(p)
+                        -m*(a - v**2*np.tan(p)/l)
+                        -F_MAX*(np.cos(p)**2)*(
+                            F_PE1(l,v,**params)
+                            + bm*v
+                        )
+                    )
+                    / (
+                        F_MAX
+                        * (np.cos(p)**2)
+                        * FLV(l,v,**params)
+                    )
+                ),
+                MuscleLength,
+                MuscleVelocity,
+                MuscleAcceleration,
+                Pennation,
+                Tension
+            )
+        )
+    )
+    return(Activation)
 
 # cT_array = np.linspace(1,100,1000)
 # Error = np.zeros(np.shape(cT_array))
@@ -211,6 +320,36 @@ Recovered_Tension = return_tension_from_muscle_length(
     Pennation=Pennation,
     **params
 )
+#
+# fig0 = plt.figure()
+# ax0 = plt.gca()
+# ax0.plot(Time,np.array(EMG)/max(EMG))
+# lo_array = np.linspace(0.03,0.2,20)
+# Error = np.zeros(np.shape(lo_array))
+# statusbar = dsb(0,len(lo_array),title="Sweeping lo")
+# for i in range(len(lo_array)):
+#     params['lo']=lo_array[i]
+#     Recovered_Activation = return_muscle_activation_from_tension_and_muscle_length(
+#         Time,
+#         Recovered_Tension,
+#         MuscleLength,
+#         Pennation,
+#         **params
+#     )
+#     Error[i] = ((np.array(EMG)/max(EMG)-Recovered_Activation.T/Recovered_Activation.max())**2).mean()
+#     ax0.plot(Time,Recovered_Activation/Recovered_Activation.max())
+#     statusbar.update(i)
+# best_lo = lo_array[np.where(Error==min(Error))]
+# params["lo"]=best_lo
+# ax0.set_ylim([-0.25,1.25])
+
+Recovered_Activation = return_muscle_activation_from_tension_and_muscle_length(
+    Time,
+    Recovered_Tension,
+    MuscleLength,
+    Pennation,
+    **params
+)
 
 fig, (ax1,ax2) = plt.subplots(2,1,figsize=[7,10])
 ax1.plot(Time,Kurokawa_Tension,'0.70',marker="o",lw=3)
@@ -231,5 +370,19 @@ ax2.legend([r"$k^T =$ " + "%.4f" % best_kT[0]])
 # ax3.plot(kT_array,Error,'b')
 # ax3.set_xlabel(r"$k^{T}$")
 # ax3.set_ylabel("Mean Squared Error (N)")
+
+fig3, (ax4,ax5) = plt.subplots(2,1,figsize=[7,10])
+ax4.plot(Time,EMG,'0.70',marker="o",lw=3)
+ax4.plot(Time,Recovered_Activation,'b',marker="o")
+ax4.set_title("Recovered Activation vs. Experimental EMG")
+ax4.set_xlabel("Time (s)")
+ax4.set_ylabel("Activation")
+ax4.legend(["Kurokawa (2001)","Recovered"])
+
+ax5.plot(Time,EMG-Recovered_Activation.T[0],'b',marker="o")
+ax5.set_title("Error")
+ax5.set_xlabel("Time (s)")
+ax5.set_ylabel("Error (Unitless)")
+ax5.legend([r"$l_o =$ " + "%.4f" % params["lo"]])
 
 plt.show()
