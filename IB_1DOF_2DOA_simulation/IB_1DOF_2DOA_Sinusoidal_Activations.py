@@ -1,6 +1,7 @@
 from pendulum_eqns.sim_eqns_ActIB_sinusoidal_activations import *
 from recovered_tension import *
 from recovered_muscle_length import *
+from recovered_activation import *
 from useful_functions import *
 import pickle
 
@@ -36,26 +37,16 @@ for i in range(NumberOfTensionTrials):
                 InitialAngularAcceleration=0,
                 InitialAngularSnap=0
                 )
-        _,Error_temp = plot_N_sim_IB_sinus_act(
-                Time,TotalX_temp,
-                TotalU_temp,Return=True,
-                ReturnError=True)
         plt.close('all')
         count+=1
 
         if count == 1:
             TotalX = TotalX_temp
             TotalU = TotalU_temp
-            Error1 = Error_temp[0]
-            Error2 = Error_temp[1]
-            Error = [Error1,Error2]
             InitialTensionsFromSuccessfulTrials.append(TotalX_temp[0,2:4,0])
         else:
             TotalX = np.concatenate([TotalX,TotalX_temp],axis=0)
             TotalU = np.concatenate([TotalU,TotalU_temp],axis=0)
-            Error1 = np.concatenate([Error1,Error_temp[0]],axis=0)
-            Error2 = np.concatenate([Error2,Error_temp[1]],axis=0)
-            Error = [Error1,Error2]
             InitialTensionsFromSuccessfulTrials.append(TotalX_temp[0,2:4,0])
     except:
         print("Trial " + str(i+1) + " Failed...")
@@ -77,6 +68,10 @@ if len(InitialTensions) != 0:
     recoverd_muscle_length_figs = \
         plot_recovered_vs_simulated_muscle_length(
             Time,TotalX
+    )
+    recoverd_muscle_activation_figs = \
+        plot_recovered_vs_simulated_activation(
+            Time,TotalX,TotalU
     )
     # plt.show()
 
