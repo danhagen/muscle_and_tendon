@@ -1,3 +1,7 @@
+##################################################
+### Replicating the Plots from Kurokawa (2001) ###
+##################################################
+
 import numpy as np
 import matplotlib.pyplot as plt
 from danpy.sb import dsb
@@ -5,44 +9,44 @@ from danpy.sb import dsb
 Time = np.linspace(-400,0,17)
 
 MuscleLength = [
-    56.04752451422728,
-    56.02899596943993,
-    55.95909282319677,
-    55.815075497804244,
-    55.62473681044336,
-    55.11941286169765,
-    54.32521205558563,
-    53.04421584551525,
-    51.303374842086264,
-    48.605787162365395,
-    45.606689526559585,
-    41.66516272634302,
-    38.70396438669314,
-    37.17199061541238,
-    36.572339529567465,
-    36.38705408169404,
-    36.248089995788966
-] # in mm
+    56.04752451422728/1000,
+    56.02899596943993/1000,
+    55.95909282319677/1000,
+    55.815075497804244/1000,
+    55.62473681044336/1000,
+    55.11941286169765/1000,
+    54.32521205558563/1000,
+    53.04421584551525/1000,
+    51.303374842086264/1000,
+    48.605787162365395/1000,
+    45.606689526559585/1000,
+    41.66516272634302/1000,
+    38.70396438669314/1000,
+    37.17199061541238/1000,
+    36.572339529567465/1000,
+    36.38705408169404/1000,
+    36.248089995788966/1000
+] # in m
 
 MusculotendonLength = [
-    423.53794408240486,
-    423.5694765608577,
-    423.5526592390162,
-    423.98570527643477,
-    423.98570527643477,
-    424.2169434517553,
-    424.2631910868194,
-    424.4502837923061,
-    424.85179735127184,
-    425.0683203699811,
-    425.19024595333195,
-    425.3437040151356,
-    425.14399831826785,
-    424.0319529114989,
-    420.03153247845285,
-    411.93399201177215,
-    401.7384906453647
-] # in mm
+    423.53794408240486/1000,
+    423.5694765608577/1000,
+    423.5526592390162/1000,
+    423.98570527643477/1000,
+    423.98570527643477/1000,
+    424.2169434517553/1000,
+    424.2631910868194/1000,
+    424.4502837923061/1000,
+    424.85179735127184/1000,
+    425.0683203699811/1000,
+    425.19024595333195/1000,
+    425.3437040151356/1000,
+    425.14399831826785/1000,
+    424.0319529114989/1000,
+    420.03153247845285/1000,
+    411.93399201177215/1000,
+    401.7384906453647/1000
+] # in m
 
 Pennation = [
     0.34600525076608996,
@@ -87,7 +91,7 @@ Kurokawa_Tension = [
 params = {
     "kT" : 0.0047,
     "cT" : 27.8,
-    "F_MAX" : 2000,
+    "F_MAX" : 1000,
     "lTo" : 0.37,
     "To" : 80
 }
@@ -104,7 +108,7 @@ def return_tension_from_muscle_length(
     elif type(Pennation)!=list:
         Pennation = [Pennation]*len(MuscleLength)
 
-    kT = params.get("kT", 60)
+    kT = params.get("kT", 0.0047)
     cT = params.get("cT", 27.8)
     F_MAX = params.get("F_MAX", 1000)
     lTo = params.get("lTo", 0.37)
@@ -137,7 +141,7 @@ def return_tension_from_muscle_length(
     )
     return(Recovered_Tension)
 
-kT_array = np.linspace(1,200,1000)
+kT_array = np.linspace(0.001,2,1000)
 Error = np.zeros(np.shape(kT_array))
 statusbar = dsb(0,len(kT_array),title="Sweeping kT")
 for i in range(len(kT_array)):
@@ -152,6 +156,54 @@ for i in range(len(kT_array)):
     statusbar.update(i)
 best_kT = kT_array[np.where(Error==min(Error))]
 params["kT"]=best_kT
+
+# cT_array = np.linspace(1,100,1000)
+# Error = np.zeros(np.shape(cT_array))
+# statusbar = dsb(0,len(cT_array),title="Sweeping cT")
+# for i in range(len(cT_array)):
+#     params['cT']=cT_array[i]
+#     Recovered_Tension = return_tension_from_muscle_length(
+#         MuscleLength,
+#         MusculotendonLength,
+#         Pennation=Pennation,
+#         **params
+#     )
+#     Error[i] = ((Kurokawa_Tension-Recovered_Tension.T)**2).mean()
+#     statusbar.update(i)
+# best_cT = cT_array[np.where(Error==min(Error))]
+# params["cT"]=best_cT
+
+# lTo_array = np.linspace(0.2,0.7,1000)
+# Error = np.zeros(np.shape(lTo_array))
+# statusbar = dsb(0,len(lTo_array),title="Sweeping lTo")
+# for i in range(len(lTo_array)):
+#     params['lTo']=lTo_array[i]
+#     Recovered_Tension = return_tension_from_muscle_length(
+#         MuscleLength,
+#         MusculotendonLength,
+#         Pennation=Pennation,
+#         **params
+#     )
+#     Error[i] = ((Kurokawa_Tension-Recovered_Tension.T)**2).mean()
+#     statusbar.update(i)
+# best_lTo = lTo_array[np.where(Error==min(Error))]
+# params["lTo"]=best_lTo
+
+# F_MAX_array = np.linspace(100,2500,1000)
+# Error = np.zeros(np.shape(F_MAX_array))
+# statusbar = dsb(0,len(F_MAX_array),title="Sweeping F_MAX")
+# for i in range(len(F_MAX_array)):
+#     params['F_MAX']=F_MAX_array[i]
+#     Recovered_Tension = return_tension_from_muscle_length(
+#         MuscleLength,
+#         MusculotendonLength,
+#         Pennation=Pennation,
+#         **params
+#     )
+#     Error[i] = ((Kurokawa_Tension-Recovered_Tension.T)**2).mean()
+#     statusbar.update(i)
+# best_F_MAX = F_MAX_array[np.where(Error==min(Error))]
+# params["F_MAX"]=best_F_MAX
 
 Recovered_Tension = return_tension_from_muscle_length(
     MuscleLength,
@@ -172,6 +224,7 @@ ax2.plot(Time,Kurokawa_Tension-Recovered_Tension.T[0],'b',marker="o")
 ax2.set_title("Error")
 ax2.set_xlabel("Time (s)")
 ax2.set_ylabel("Error (N)")
+ax2.legend([r"$k^T =$ " + "%.4f" % best_kT[0]])
 
 # fig2 = plt.figure()
 # ax3 = plt.gca()
