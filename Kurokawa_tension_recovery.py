@@ -91,8 +91,8 @@ Kurokawa_Tension = [
 params = {
     "kT" : 0.0047,
     "cT" : 27.8,
-    "F_MAX" : 1000,
-    "lTo" : 0.37,
+    "F_MAX" : 3000,
+    "lTo" : 0.45,
     "To" : 80
 }
 
@@ -111,7 +111,7 @@ def return_tension_from_muscle_length(
     kT = params.get("kT", 0.0047)
     cT = params.get("cT", 27.8)
     F_MAX = params.get("F_MAX", 1000)
-    lTo = params.get("lTo", 0.37)
+    lTo = params.get("lTo", 0.45)
     T_i = params.get("To", 80)
     lm_i = MuscleLength[0]
     l_MTU_i = MusculotendonLength[0]
@@ -141,22 +141,6 @@ def return_tension_from_muscle_length(
     )
     return(Recovered_Tension)
 
-kT_array = np.linspace(0.001,2,1000)
-Error = np.zeros(np.shape(kT_array))
-statusbar = dsb(0,len(kT_array),title="Sweeping kT")
-for i in range(len(kT_array)):
-    params['kT']=kT_array[i]
-    Recovered_Tension = return_tension_from_muscle_length(
-        MuscleLength,
-        MusculotendonLength,
-        Pennation=Pennation,
-        **params
-    )
-    Error[i] = ((Kurokawa_Tension-Recovered_Tension.T)**2).mean()
-    statusbar.update(i)
-best_kT = kT_array[np.where(Error==min(Error))]
-params["kT"]=best_kT
-
 # cT_array = np.linspace(1,100,1000)
 # Error = np.zeros(np.shape(cT_array))
 # statusbar = dsb(0,len(cT_array),title="Sweeping cT")
@@ -172,7 +156,7 @@ params["kT"]=best_kT
 #     statusbar.update(i)
 # best_cT = cT_array[np.where(Error==min(Error))]
 # params["cT"]=best_cT
-
+#
 # lTo_array = np.linspace(0.2,0.7,1000)
 # Error = np.zeros(np.shape(lTo_array))
 # statusbar = dsb(0,len(lTo_array),title="Sweeping lTo")
@@ -188,6 +172,22 @@ params["kT"]=best_kT
 #     statusbar.update(i)
 # best_lTo = lTo_array[np.where(Error==min(Error))]
 # params["lTo"]=best_lTo
+
+kT_array = np.linspace(0.001,2,1000)
+Error = np.zeros(np.shape(kT_array))
+statusbar = dsb(0,len(kT_array),title="Sweeping kT")
+for i in range(len(kT_array)):
+    params['kT']=kT_array[i]
+    Recovered_Tension = return_tension_from_muscle_length(
+        MuscleLength,
+        MusculotendonLength,
+        Pennation=Pennation,
+        **params
+    )
+    Error[i] = ((Kurokawa_Tension-Recovered_Tension.T)**2).mean()
+    statusbar.update(i)
+best_kT = kT_array[np.where(Error==min(Error))]
+params["kT"]=best_kT
 
 # F_MAX_array = np.linspace(100,2500,1000)
 # Error = np.zeros(np.shape(F_MAX_array))

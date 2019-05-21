@@ -13,9 +13,9 @@ F_MAX_LG = 1000
 F_MAX_Sol = 1000
 cT = 27.8
 kT = 0.0047
-lTo_MG = 0.37 # in m
-lTo_LG = 0.37 # in m
-lTo_Sol = 0.37 # in m
+lTo_MG = 0.45 # in m
+lTo_LG = 0.45 # in m
+lTo_Sol = 0.45 # in m
 
 R = 0.05 # m
 
