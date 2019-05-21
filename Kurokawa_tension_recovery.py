@@ -111,10 +111,10 @@ EMG = [
 params = {
     "kT" : 0.0047,
     "cT" : 27.8,
-    "F_MAX" : 1000,
+    "F_MAX" : 3000,
     "lTo" : 0.45,
     "To" : 80,
-    "lo" : 0.06,
+    "lo" : 0.05,
     "β" : 1.55,
     "ω" : 0.75,
     "ρ" : 2.12,
@@ -320,28 +320,6 @@ Recovered_Tension = return_tension_from_muscle_length(
     Pennation=Pennation,
     **params
 )
-#
-# fig0 = plt.figure()
-# ax0 = plt.gca()
-# ax0.plot(Time,np.array(EMG)/max(EMG))
-# lo_array = np.linspace(0.03,0.2,20)
-# Error = np.zeros(np.shape(lo_array))
-# statusbar = dsb(0,len(lo_array),title="Sweeping lo")
-# for i in range(len(lo_array)):
-#     params['lo']=lo_array[i]
-#     Recovered_Activation = return_muscle_activation_from_tension_and_muscle_length(
-#         Time,
-#         Recovered_Tension,
-#         MuscleLength,
-#         Pennation,
-#         **params
-#     )
-#     Error[i] = ((np.array(EMG)/max(EMG)-Recovered_Activation.T/Recovered_Activation.max())**2).mean()
-#     ax0.plot(Time,Recovered_Activation/Recovered_Activation.max())
-#     statusbar.update(i)
-# best_lo = lo_array[np.where(Error==min(Error))]
-# params["lo"]=best_lo
-# ax0.set_ylim([-0.25,1.25])
 
 Recovered_Activation = return_muscle_activation_from_tension_and_muscle_length(
     Time,
@@ -371,18 +349,26 @@ ax2.legend([r"$k^T =$ " + "%.4f" % best_kT[0]])
 # ax3.set_xlabel(r"$k^{T}$")
 # ax3.set_ylabel("Mean Squared Error (N)")
 
+delay = 2 # timesteps
+Adjusted_Activation = (
+    max(EMG)
+    * Recovered_Activation
+    / (Recovered_Activation.max())
+)
 fig3, (ax4,ax5) = plt.subplots(2,1,figsize=[7,10])
 ax4.plot(Time,EMG,'0.70',marker="o",lw=3)
-ax4.plot(Time,Recovered_Activation,'b',marker="o")
+ax4.plot(Time,Adjusted_Activation,'b',marker="o")
+ax4.plot(Time[:-delay],Adjusted_Activation[delay:],'b--',marker='o')
 ax4.set_title("Recovered Activation vs. Experimental EMG")
 ax4.set_xlabel("Time (s)")
 ax4.set_ylabel("Activation")
-ax4.legend(["Kurokawa (2001)","Recovered"])
+ax4.legend(["Kurokawa (2001)","Recovered","Recovered (" + str(delay*25) + "ms Delay)"])
 
-ax5.plot(Time,EMG-Recovered_Activation.T[0],'b',marker="o")
+ax5.plot(Time,EMG-Adjusted_Activation.T[0],'b',marker="o")
+ax5.plot(Time[:-delay],EMG[:-delay]-(Adjusted_Activation.T[0])[delay:],'b--',marker="o")
 ax5.set_title("Error")
 ax5.set_xlabel("Time (s)")
 ax5.set_ylabel("Error (Unitless)")
-ax5.legend([r"$l_o =$ " + "%.4f" % params["lo"]])
+ax5.legend([r"$l_o =$ " + "%.4f" % params["lo"], "Delayed by " + str(delay*25) + "ms"])
 
 plt.show()
