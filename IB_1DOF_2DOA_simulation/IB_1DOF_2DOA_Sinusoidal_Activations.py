@@ -2,17 +2,27 @@ from pendulum_eqns.sim_eqns_ActIB_sinusoidal_activations import *
 from recovered_tension import *
 from recovered_muscle_length import *
 from recovered_activation import *
-from useful_functions import *
+from danpy.useful_functions import *
+from danpy.sb import dsb,get_terminal_width
 import pickle
 
 X_o = np.array([r(0),dr(0)])
+# InitialTensions = return_initial_tension(
+#     X_o,
+#     ReturnMultipleInitialTensions=True,
+#     Bounds=[[0,0.4*F_MAX1],[0,0.4*F_MAX2]],
+#     InitialAngularAcceleration=0
+# ) # list of len::8
 InitialTensions = return_initial_tension(
-                        X_o,
-                        ReturnMultipleInitialTensions=True,
-                        Bounds = [[0,0.4*F_MAX1],[0,0.4*F_MAX2]],
-                        InitialAngularAcceleration=0
-                        ) # list of len::8
-InitialTensions = InitialTensions[3:6]
+    X_o,
+    ReturnMultipleInitialTensions=True,
+    Seed=1,
+    Bounds = [[0,0.4*BIC.F_MAX],[0,0.4*TRI.F_MAX]],
+    InitialAngularAcceleration=d2r(0),
+    Return_k = False
+) # list of len::8
+# InitialTensions = InitialTensions[3:6]
+InitialTensions = [InitialTensions[3]]
 NumberOfTensionTrials = len(InitialTensions)
 InitialTensionsFromSuccessfulTrials = []
 TerminalWidth = get_terminal_width()
@@ -75,9 +85,15 @@ if len(InitialTensions) != 0:
     )
     # plt.show()
 
+    params["Muscle 1"] = BIC.__dict__
+    params["Muscle 1"]["Settings"] = BIC_Settings
+    params["Muscle 2"] = TRI.__dict__
+    params["Muscle 2"]["Settings"] = TRI_Settings
+
     FilePath = save_figures(
         "output_figures/integrator_backstepping_sinusoidal_activations/",
-        "1DOF_2DOA_v1.0",
+        "v1.0",
+        params,
         SaveAsPDF=True,
         ReturnPath=True
     )
