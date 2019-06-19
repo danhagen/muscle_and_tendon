@@ -1,5 +1,5 @@
 ##################################################
-### Replicating the Plots from Kurokawa (2008) ###
+### Replicating the Plots from Kawakami (1998) ###
 ##################################################
 
 import numpy as np
