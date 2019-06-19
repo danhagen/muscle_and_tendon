@@ -33,7 +33,7 @@ params = {
     "L_CE_max" : 1.2,
     "bm" : 0.01,
     "m" : 0.5,
-    "bu" : 20
+    "bu" : 5
 }
 
 def FL(l,**params):
@@ -116,6 +116,7 @@ def return_muscle_activation_from_tension_and_muscle_length(
         Tension,
         MuscleLength,
         Pennation,
+        ReturnDelayedActivation=False,
         **params
         ):
     F_MAX = params.get("F_MAX",1000)
@@ -152,68 +153,72 @@ def return_muscle_activation_from_tension_and_muscle_length(
             )
         )
     )
-    # Gamma = lambda l,v,a,p,T: (
-    #     (
-    #         T*np.cos(p)
-    #         -m*(a - v**2*np.tan(p)/l)
-    #         -F_MAX*(np.cos(p)**2)*(
-    #             F_PE1(l,v,**params)
-    #             + bm*v
-    #         )
-    #     )
-    #     / (
-    #         F_MAX
-    #         * (np.cos(p)**2)
-    #         * FLV(l,v,**params)
-    #     )
-    # )
-    # Tau = lambda l,v,p: (
-    #     bu
-    #     / (
-    #         F_MAX
-    #         * (np.cos(p)**2)
-    #         * FLV(l,v,**params)
-    #     )
-    # )
-    # FE_Activation = np.zeros(len(MuscleLength))
-    # FE_Activation[0] = EMG[0]
-    # for i in range(len(MuscleLength)-1):
-    #     FE_Activation[i+1] = (
-    #         FE_Activation[i]
-    #         + (dt / Tau(MuscleLength[i],MuscleVelocity[i],Pennation[i]))
-    #         * (
-    #             Gamma(
-    #                 MuscleLength[i],
-    #                 MuscleVelocity[i],
-    #                 MuscleAcceleration[i],
-    #                 Pennation[i],
-    #                 Tension[i]
-    #             )
-    #             - FE_Activation[i]
-    #         )
-    #     )
-    return(Activation)
+    assert type(ReturnDelayedActivation)==bool,"ReturnDelayedActivation must be either true or false (default)."
+    if ReturnDelayedActivation==True:
+        Gamma = lambda l,v,a,p,T: (
+            (
+                T*np.cos(p)
+                -m*(a - v**2*np.tan(p)/l)
+                -F_MAX*(np.cos(p)**2)*(
+                    F_PE1(l,v,**params)
+                    + bm*v
+                )
+            )
+            / (
+                F_MAX
+                * (np.cos(p)**2)
+                * FLV(l,v,**params)
+            )
+        )
+        Tau = lambda l,v,p: (
+            bu
+            / (
+                F_MAX
+                * (np.cos(p)**2)
+                * FLV(l,v,**params)
+            )
+        )
+        DelayedActivation = np.zeros(len(MuscleLength))
+        DelayedActivation[0] = EMG[0]
+        for i in range(len(MuscleLength)-1):
+            DelayedActivation[i+1] = (
+                DelayedActivation[i]
+                + (dt / Tau(MuscleLength[i],MuscleVelocity[i],Pennation[i]))
+                * (
+                    Gamma(
+                        MuscleLength[i],
+                        MuscleVelocity[i],
+                        MuscleAcceleration[i],
+                        Pennation[i],
+                        Tension[i]
+                    )
+                    - DelayedActivation[i]
+                )
+            )
+        return(Activation,DelayedActivation)
+    else:
+        return(Activation)
 
 N_param = 100
-# F_MAX_array = np.linspace(1000,4000,N_param)
-F_MAX_array = np.array([3000])
+LrT_array = np.linspace(0.01,2,N_param)
+# LrT_array = np.array([1.2])
 # lTo_array = np.linspace(0.2,0.7,N_param)
 lTo_array = np.array([0.50])
 cT_array = np.linspace(1,50,N_param)
 # cT_array = np.array([27.8])
 kT_array = np.linspace(0.001,0.5,N_param)
 # kT_array = np.array([0.0047])
-Error = np.zeros((len(F_MAX_array),len(lTo_array),len(cT_array),len(kT_array)))
+Error = np.zeros((len(LrT_array),len(lTo_array),len(cT_array),len(kT_array)))
 statusbar=dsb(
     0,
-    len(F_MAX_array)*len(lTo_array)*len(cT_array)*len(kT_array),
+    len(LrT_array)*len(lTo_array)*len(cT_array)*len(kT_array),
     title="Sweeping Tendon Parameters"
 )
-for h in range(len(F_MAX_array)):
+for h in range(len(LrT_array)):
     for i in range(len(lTo_array)):
         for j in range(len(cT_array)):
             for k in range(len(kT_array)):
-                params['F_MAX']=F_MAX_array[h]
+                params['LrT']=LrT_array[h]
                 params['lTo']=lTo_array[i]
                 params['cT']=cT_array[j]
                 params['kT']=kT_array[k]
@@ -231,12 +236,12 @@ for h in range(len(F_MAX_array)):
                     + k
                 )
 
-best_F_MAX = F_MAX_array[np.where(Error==Error.min())[0][0]]
+best_LrT = LrT_array[np.where(Error==Error.min())[0][0]]
 best_lTo = lTo_array[np.where(Error==Error.min())[1][0]]
 best_cT = cT_array[np.where(Error==Error.min())[2][0]]
 best_kT = kT_array[np.where(Error==Error.min())[3][0]]
 
-params["F_MAX"]=best_F_MAX
+params["LrT"]=best_LrT
 params["lTo"]=best_lTo
 params["cT"]=best_cT
 params["kT"]=best_kT
@@ -249,29 +254,29 @@ Recovered_Tension = return_tension_from_muscle_length(
 )
 delay = 2
 lo_array = np.linspace(0.02,0.2,100)
-# lo_array = np.array([0.06])
+# lo_array = np.array([params["lo"]])
 # bm_array = np.linspace(0.01,1,100)
-bm_array = np.array([0.01])
+bm_array = np.array([params["bm"]])
 L_CE_max_array = np.linspace(0.5,1.5,100)
-# L_CE_max_array = np.array([1.2])
-# η_array = np.linspace(0.01,1.5,100)
-η_array = np.array([0.01])
+# L_CE_max_array = np.array([params["L_CE_max"]])
+# V_max_array = np.linspace(-20,-1,100)
+V_max_array = np.array([params["V_max"]])
 EMG_Error = np.zeros(
-    (len(lo_array),len(bm_array),len(L_CE_max_array),len(η_array))
+    (len(lo_array),len(bm_array),len(L_CE_max_array),len(V_max_array))
 )
 statusbar = dsb(
     0,
-    len(lo_array)*len(bm_array)*len(L_CE_max_array)*len(η_array),
+    len(lo_array)*len(bm_array)*len(L_CE_max_array)*len(V_max_array),
     title="Sweeping Muscle Parameters"
 )
 for i in range(len(lo_array)):
     for j in range(len(bm_array)):
         for k in range(len(L_CE_max_array)):
-            for l in range(len(η_array)):
+            for l in range(len(V_max_array)):
                 params['lo']=lo_array[i]
                 params['bm']=bm_array[j]
                 params['L_CE_max']=L_CE_max_array[k]
-                params['η']=η_array[l]
+                params['V_max']=V_max_array[l]
                 Recovered_Activation = return_muscle_activation_from_tension_and_muscle_length(
                     Time,
                     Recovered_Tension,
@@ -284,29 +289,32 @@ for i in range(len(lo_array)):
                     * Recovered_Activation
                     / (Recovered_Activation.max())
                 )
-                EMG_Error[i,j,k] = ((EMG[:len(EMG)-delay]-Adjusted_Activation[delay:])**2).mean()
+                # EMG_Error[i,j,k] = ((EMG[:len(EMG)-delay]-Adjusted_Activation[delay:])**2).mean()
+                EMG_Error[i,j,k] = ((EMG-Adjusted_Activation)**2).mean()
                 statusbar.update(
-                    (len(bm_array)*len(L_CE_max_array)*len(η_array))*i
-                    + (len(L_CE_max_array)*len(η_array))*j
-                    + len(η_array)*k
+                    (len(bm_array)*len(L_CE_max_array)*len(V_max_array))*i
+                    + (len(L_CE_max_array)*len(V_max_array))*j
+                    + len(V_max_array)*k
                     + l
                 )
 
 best_lo = lo_array[np.where(EMG_Error==EMG_Error.min())[0][0]]
 best_bm = bm_array[np.where(EMG_Error==EMG_Error.min())[1][0]]
 best_L_CE_max = L_CE_max_array[np.where(EMG_Error==EMG_Error.min())[2][0]]
-best_η = η_array[np.where(EMG_Error==EMG_Error.min())[3][0]]
+best_V_max = V_max_array[np.where(EMG_Error==EMG_Error.min())[3][0]]
 params["lo"]=best_lo
 params["bm"]=best_bm
 params["L_CE_max"]=best_L_CE_max
-params["η"]=best_η
+params["V_max"]=best_V_max
 
-Recovered_Activation = return_muscle_activation_from_tension_and_muscle_length(
-    Time,
-    Recovered_Tension,
-    MuscleLength,
-    Pennation,
-    **params
+Recovered_Activation = \
+     return_muscle_activation_from_tension_and_muscle_length(
+        Time,
+        Recovered_Tension,
+        MuscleLength,
+        Pennation,
+        ReturnDelayedActivation=False,
+        **params
 )
 
 fig, (ax1,ax2) = plt.subplots(2,1,figsize=[7,10])
@@ -334,6 +342,7 @@ ax4.plot(Time,EMG,'0.70',lw=3)
 ax4.plot(Time,Recovered_Activation,'r')
 ax4.plot(Time[:-delay],Recovered_Activation[delay:],'r--')
 ax4.plot(Time,Adjusted_Activation,'b')
+# ax4.plot(Time,Delayed_Activation,'k--')
 ax4.plot(Time[:-delay],Adjusted_Activation[delay:],'b--')
 ax4.set_title("Recovered Activation vs. Experimental EMG")
 ax4.set_xlabel("Time (ms)")
