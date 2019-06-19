@@ -1,6 +1,6 @@
 import numpy as np
 
-Amp = 7.5*np.pi/180
+Amp = 22.5*np.pi/180
 Base = 90*np.pi/180
 Freq = 2*np.pi
 

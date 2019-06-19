@@ -6,7 +6,6 @@ from danpy.sb import dsb,get_terminal_width
 from pendulum_eqns.init_IB_sinusoid_model import *
 ### ONLY WORKS FOR REFERENCE TRAJECTORY 1
 
-
 N_seconds = 4
 N = N_seconds*5000 + 1
 Time = np.linspace(0,N_seconds,N)
@@ -89,53 +88,74 @@ def run_sim_IB_sinus_act(**kwargs):
     assert type(Bounds)==list and np.shape(Bounds)==(2,2), "Bounds should be a list of shape (2,2)."
 
     Amp = kwargs.get("Amp",1)
-    if Amp!="Scaled":
+    if Amp is not "Scaled":
         assert type(Amp) in [int,float], "Amp should be an int or a float."
 
     Freq = kwargs.get("Freq",1)
     assert type(Freq) in [int,float], "Freq should be an int or a float."
 
+    ICs = kwargs.get("ICs",None)
     AnotherIteration = True
     AttemptNumber = 1
 
     while AnotherIteration == True:
         X = np.zeros((8,N))
-        InitialTension,InitialMuscleLengths,InitialActivations = \
-        	find_viable_initial_values(**kwargs)
-        X[:,0] = [
-        	r(0),
-        	dr(0),
-        	InitialTension[0][0],
-        	InitialTension[1][0],
-        	InitialMuscleLengths[0],
-        	InitialMuscleLengths[1],
-        	0,
-        	0]
+        if ICs is None:
+            InitialTension,InitialMuscleLengths,InitialActivations = \
+            	find_viable_initial_values(**kwargs)
+            X[:,0] = [
+            	r(0),
+            	dr(0),
+            	InitialTension[0][0],
+            	InitialTension[1][0],
+            	InitialMuscleLengths[0],
+            	InitialMuscleLengths[1],
+            	0,
+            	0]
+            X_o = X[:,0]
+        else:
+            assert ((len(ICs)==2)
+                    and (np.shape(ICs[0])==(8,))
+                    and (np.shape(ICs[1])==(2,))), \
+                "ICs must be a list that contains X_o (of shape (8,)) and U_o (of shape (2,))."
+            X[:,0] = ICs[0]
+            X_o = X[:,0]
+            InitialActivations = ICs[1]
+
         U = np.zeros((2,N))
-        if Amp == "Scaled":
+        if Amp is "Scaled":
             Amp = 0.25*InitialActivations[0]
         assert Amp>0, "Amp became negative. Run Again."
 
         U[0,:] = InitialActivations[0] + Amp*(np.cos(2*np.pi*Freq*Time)-1)
         U[1,0] = InitialActivations[1]
+        U_o = U[:,0]
+
+        Plant = Pendulum_1DOF_2DOA(BIC,TRI,X_o,U_o,Time)
+        Plant.U[0,:] = U[0,:]
 
         try:
             cprint("Attempt #" + str(int(AttemptNumber)) + ":\n", 'green')
-            statusbar = dsb(0,N-1,title=run_sim_IB_sinus_act.__name__)
+            # statusbar = dsb(0,N-1,title=run_sim_IB_sinus_act.__name__)
+            # for i in range(N-1):
+            #     U[:,i+1] = return_U_given_sinusoidal_u1(i,Time,X[:,i],U[0,i+1])
+            #     X[:,i+1] = X[:,i] + dt*np.array([	dX1_dt(X[:,i]),\
+            #     									dX2_dt(X[:,i]),\
+            #     									dX3_dt(X[:,i]),\
+            #     									dX4_dt(X[:,i]),\
+            #     									dX5_dt(X[:,i]),\
+            #     									dX6_dt(X[:,i]),\
+            #     									dX7_dt(X[:,i],U=U[:,i+1]),\
+            #     									dX8_dt(X[:,i],U=U[:,i+1])
+            #                                         ])
+            #     statusbar.update(i)
+            statusbar = dsb(0,N-1,title="Class Test")
             for i in range(N-1):
-                U[:,i+1] = return_U_given_sinusoidal_u1(i,Time,X[:,i],U[0,i+1])
-                X[:,i+1] = X[:,i] + dt*np.array([	dX1_dt(X[:,i]),\
-                									dX2_dt(X[:,i]),\
-                									dX3_dt(X[:,i]),\
-                									dX4_dt(X[:,i]),\
-                									dX5_dt(X[:,i]),\
-                									dX6_dt(X[:,i]),\
-                									dX7_dt(X[:,i],U=U[:,i+1]),\
-                									dX8_dt(X[:,i],U=U[:,i+1])
-                                                    ])
+                Plant.update_pendulum_variables(i)
+                Plant.forward_integrate(i)
                 statusbar.update(i)
             AnotherIteration = False
-            return(X,U)
+            return(Plant.X,Plant.U)
         except:
             print('\n')
             print(" "*(get_terminal_width()\
@@ -221,6 +241,12 @@ def plot_N_sim_IB_sinus_act(t,TotalX,TotalU,**kwargs):
     ReturnError = kwargs.get("ReturnError",False)
     assert type(ReturnError)==bool, "ReturnError should be either True or False."
 
+    Normalized = kwargs.get("Normalized",False)
+    assert type(Normalized)==bool, "Normalized should be either True or False."
+
+    ######################################
+    ###### Actual/Expected Endpoint ######
+    ######################################
     fig1 = plt.figure(figsize = (9,7))
     fig1_title = "Underdetermined Forced-Pendulum Example"
     plt.title(fig1_title,fontsize=16,color='gray')
@@ -234,6 +260,9 @@ def plot_N_sim_IB_sinus_act(t,TotalX,TotalU,**kwargs):
     plt.xlabel("Time (s)")
     plt.ylabel("Desired Measure (Deg)")
 
+    ######################################
+    ########### Endpoint Error ###########
+    ######################################
     fig2 = plt.figure(figsize = (9,7))
     fig2_title = "Error vs. Time"
     plt.title(fig2_title)
@@ -244,6 +273,11 @@ def plot_N_sim_IB_sinus_act(t,TotalX,TotalU,**kwargs):
     plt.xlabel("Time (s)")
     plt.ylabel("Error (Deg)")
 
+    ######################################
+    ############# plot_states ############
+    ############# plot_inputs ############
+    ######### plot_l_m_comparison ########
+    ######################################
     statusbar.reset(
         title=(
         	plot_N_sim_IB_sinus_act.__name__
@@ -252,23 +286,49 @@ def plot_N_sim_IB_sinus_act(t,TotalX,TotalU,**kwargs):
         )
     for j in range(np.shape(TotalX)[0]):
         if j == 0:
-            fig3 = plot_states(t,TotalX[j],Return=True,InputString = "Muscle Activations")
-            fig4 = plot_inputs(t,TotalU[j],Return=True,InputString = "Muscle Activations")
+            fig3 = plot_states(
+                t,TotalX[j],
+                Return=True,
+                InputString="Muscle Activations",
+                Normalized=Normalized
+            )
+            fig4 = plot_inputs(
+                t,TotalU[j],
+                Return=True,
+                InputString="Muscle Activations"
+            )
             fig5,Error = plot_l_m_comparison(
-            t,TotalX[j],MuscleLengths=TotalX[j,4:6,:],
-            Return=True,InputString="Muscle Activation",ReturnError=True
+                t,TotalX[j],
+                MuscleLengths=TotalX[j,4:6,:],
+                Return=True,
+                InputString="Muscle Activation",
+                Normalized=Normalized,
+                ReturnError=True
             )
             Error1 = Error[0][np.newaxis,:]
             Error2 = Error[1][np.newaxis,:]
         else:
-            fig3 = plot_states(t,TotalX[j],Return=True,InputString = "Muscle Activations",\
-            	              Figure=fig3)
-            fig4 = plot_inputs(t,TotalU[j],Return=True,InputString = "Muscle Activations", \
-            	              Figure = fig4)
+            fig3 = plot_states(
+                t,TotalX[j],
+                Return=True,
+                InputString="Muscle Activations",
+                Normalized=Normalized,
+                Figure=fig3
+            )
+            fig4 = plot_inputs(
+                t,TotalU[j],
+                Return=True,
+                InputString="Muscle Activations",
+                Figure=fig4
+            )
             fig5,Error = plot_l_m_comparison(
-            t,TotalX[j],MuscleLengths=TotalX[j,4:6,:],
-            Return=True,InputString="Muscle Activation",ReturnError=True,
-            Figure=fig5
+                t,TotalX[j],
+                MuscleLengths=TotalX[j,4:6,:],
+                Return=True,
+                InputString="Muscle Activation",
+                Normalized=Normalized,
+                ReturnError=True,
+                Figure=fig5
             )
             Error1 = np.concatenate([Error1,Error[0][np.newaxis,:]],axis=0)
             Error2 = np.concatenate([Error2,Error[1][np.newaxis,:]],axis=0)

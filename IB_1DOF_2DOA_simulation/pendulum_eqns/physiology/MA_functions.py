@@ -25,7 +25,7 @@ def MA_function(Parameters,θ_PS=None):
 	threshold = Parameters.Threshold
 
 	assert type(src) == str, "src must be a str."
-	assert src.capitalize() in ['Ramsay; 2009','Pigeon; 1996','Kuechle; 1997','Holzbaur; 2005', 'Est'], "src must be either Ramsay; 2009, Pigeon or Est (Estimate)."
+	assert src.capitalize() in ['Ramsay; 2009','Pigeon; 1996','Kuechle; 1997','Holzbaur; 2005', 'Est',"Bic test"], "src must be either Ramsay; 2009, Pigeon or Est (Estimate)."
 
 	'''
 	Note:
@@ -38,7 +38,7 @@ def MA_function(Parameters,θ_PS=None):
 										*np.matrix([1,θ,θ**2,θ**3,θ**4,θ**5]).T)[0,0]
 	elif src.capitalize() == 'Est':
 		MomentArm = lambda θ: np.array(Coefficients,dtype='float64')
-	else: #src.capitalize() == 'Ramsay; 2009'
+	else: #src.capitalize() == 'Ramsay; 2009' or 'BIC test'
 		assert type(Coefficients) == list, "Coefficients must be a list."
 		assert len(Coefficients) in [5,16,18], "Coefficients as a list must be of length 5, 16, or 18."
 		assert eq in [1,2,3], "eq must be either 1, 2, or 3 when using Ramsay; 2009 (2009)."

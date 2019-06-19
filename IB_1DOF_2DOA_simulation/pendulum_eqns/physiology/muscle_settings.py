@@ -258,12 +258,13 @@ def return_muscle_settings(PreselectedMuscles=None):
 									MA_Settings([29.21,0,0,0,0,0], 'Pigeon; 1996', "mm", None, None, "Shoulder"),\
 									MA_Settings(15, 'Est', "mm", None, None, "Shoulder")\
 								]}, \
-		'Elbow MA' : {	"Primary Source" : "Ramsay; 2009", \
+		'Elbow MA' : {	"Primary Source" : "Est", \
 	 					"Sources" : \
 							[\
 								MA_Settings([8.4533,36.6147,2.4777,-19.432,2.0571,0,13.6502,0,0,-5.6172,0,-2.0854,0,0,0,0], 'Ramsay; 2009', "mm", 2, 3.021, 'Elbow'),\
 								MA_Settings(Pigeon_coeff_conversion([14.660,4.5322,1.8047,-2.9883,0,0]), 'Pigeon; 1996', "mm", None, 2.9326, 'Elbow'),\
-								MA_Settings([36,0,0,0,0,0], 'Holzbaur; 2005', "mm", None, None, "Elbow")
+								MA_Settings([36,0,0,0,0,0], 'Holzbaur; 2005', "mm", None, None, "Elbow"),
+								MA_Settings(50, 'Est', "mm", None, None, "Elbow")
 							]}, \
 		'Spindle' : Spindle_Settings(320,292.6,1.1,"Banks; 2006"),\
 		'Mass' : {	"Primary Source" : "Banks; 2006", \
@@ -315,12 +316,13 @@ def return_muscle_settings(PreselectedMuscles=None):
 									MA_Settings([-25.40,0,0,0,0,0], 'Pigeon; 1996', "mm", None, None, "Shoulder"),\
 									MA_Settings(-15, 'Est', "mm", None, None, "Shoulder")\
 								]}, \
-		'Elbow MA' : {	"Primary Source" : "Ramsay; 2009", \
+		'Elbow MA' : {	"Primary Source" : "Est", \
 	 					"Sources" : \
 							[\
 								MA_Settings([-24.5454,-8.8691,9.3509,-1.7518,0], 'Ramsay; 2009', 'mm', 1, None, 'Elbow'),\
 								MA_Settings(Pigeon_coeff_conversion([-23.287,-3.0284,12.886,-19.092,13.277,-3.5171]), 'Pigeon; 1996', 'mm', None, None, 'Elbow'),\
-								MA_Settings([-21,0,0,0,0,0], 'Holzbaur; 2005', 'mm', None, None, 'Elbow')
+								MA_Settings([-21,0,0,0,0,0], 'Holzbaur; 2005', 'mm', None, None, 'Elbow'),
+								MA_Settings(-50, 'Est', "mm", None, None, "Elbow")
 							]}, \
 		'Spindle' : Spindle_Settings((200+222+98),(223.7+269.6+221.8),(0.89+0.82+0.44)/3,"Banks; 2006"),\
 		'Mass' : {	"Primary Source" : "Banks; 2006",\
