@@ -136,20 +136,7 @@ def run_sim_IB_sinus_act(**kwargs):
 
         try:
             cprint("Attempt #" + str(int(AttemptNumber)) + ":\n", 'green')
-            # statusbar = dsb(0,N-1,title=run_sim_IB_sinus_act.__name__)
-            # for i in range(N-1):
-            #     U[:,i+1] = return_U_given_sinusoidal_u1(i,Time,X[:,i],U[0,i+1])
-            #     X[:,i+1] = X[:,i] + dt*np.array([	dX1_dt(X[:,i]),\
-            #     									dX2_dt(X[:,i]),\
-            #     									dX3_dt(X[:,i]),\
-            #     									dX4_dt(X[:,i]),\
-            #     									dX5_dt(X[:,i]),\
-            #     									dX6_dt(X[:,i]),\
-            #     									dX7_dt(X[:,i],U=U[:,i+1]),\
-            #     									dX8_dt(X[:,i],U=U[:,i+1])
-            #                                         ])
-            #     statusbar.update(i)
-            statusbar = dsb(0,N-1,title="Class Test")
+            statusbar = dsb(0,N-1,title=run_sim_IB_sinus_act.__name__)
             for i in range(N-1):
                 Plant.update_pendulum_variables(i)
                 Plant.forward_integrate(i)

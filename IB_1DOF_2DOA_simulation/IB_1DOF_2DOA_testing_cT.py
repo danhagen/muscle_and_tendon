@@ -10,7 +10,7 @@ X_o = np.array([r(0),dr(0)])
 InitialTension = return_initial_tension(
     X_o,
     ReturnMultipleInitialTensions=False,
-    Seed=1,
+    Seed=2,
     Bounds = [[0,0.4*BIC.F_MAX],[0,0.4*TRI.F_MAX]],
     InitialAngularAcceleration=d2r(0),
     Return_k = False
@@ -60,7 +60,7 @@ try:
     Modulo_IC_Indices = list(np.where(Time%Period==0)[0])[1:]
 
     if (X==np.zeros((8,len(Time)))).all():
-        raise ValueError("Trial " + str(i+1) + " Failed... Try Again!")
+        raise ValueError("Trial Failed... Try Again!")
 except ValueError:
     print("Dont know what happened... Try Again!")
     raise

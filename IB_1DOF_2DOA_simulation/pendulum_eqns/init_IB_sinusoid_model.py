@@ -79,25 +79,6 @@ def return_random_initial_muscle_lengths_and_activations(InitialTension,X_o,**kw
 			and str(type(InitialTensionAcceleration))=="<class 'numpy.ndarray'>", \
 		"InitialTensionAcceleration must be a numpy array of shape (2,)"
 
-
-	# BIC.a_MTU(X_o) = np.sign(-BIC.R(X_o[0])) * (
-	# 	InitialAngularAcceleration
-	# 	* np.sqrt(BIC.dR(X_o[0])**2 + BIC.R(X_o[0])**2)
-	# 	+ (
-	#     	X_o[1]**2
-	#     	* BIC.dR(X_o[0])
-	#     	* (BIC.d2R(X_o[0]) + BIC.R(X_o[0]))
-	# 	) / np.sqrt(BIC.dR(X_o[0])**2 + BIC.R(X_o[0])**2)
-	# )
-	# TRI.a_MTU(X_o) = np.sign(-TRI.R(X_o[0])) * (
-	# 	InitialAngularAcceleration
-	# 	* np.sqrt(TRI.dR(X_o[0])**2 + TRI.R(X_o[0])**2)
-	# 	+ (
-	# 		X_o[1]**2
-	#     	* TRI.dR(X_o[0])
-	#     	* (TRI.d2R(X_o[0]) + TRI.R(X_o[0]))
-	# 	) / np.sqrt(TRI.dR(X_o[0])**2 + TRI.R(X_o[0])**2)
-	# )
 	X_o = [X_o[0],X_o[1],InitialTension[0],InitialTension[1]]
 	vm1 = (
 		(

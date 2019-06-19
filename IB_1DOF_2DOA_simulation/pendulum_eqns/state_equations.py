@@ -83,11 +83,8 @@ TRI.C5 = np.tan(TRI.pa)**2
 
 def dX1_dt(X):
 	return(X[1])
-def dX2_dt(X,U=None):
-	if U is None:
-		return(A*np.sin(X[0]) + B*BIC.R(X[0])*X[2] + B*TRI.R(X[0])*X[3])
-	else:
-		return(A*np.sin(X[0]) + B*BIC.R(X[0])*U[0] + B*TRI.R(X[0])*U[1])
+def dX2_dt(X):
+	return(A*np.sin(X[0]) + B*BIC.R(X[0])*X[2] + B*TRI.R(X[0])*X[3])
 
 ##########################
 ##### Update Classes #####
@@ -457,53 +454,6 @@ class Pendulum_1DOF_2DOA:
 		self.X[5,i+1] = self.X[5,i] + self.dt*self.dX6
 		self.X[6,i+1] = self.X[6,i] + self.dt*self.dX7
 		self.X[7,i+1] = self.X[7,i] + self.dt*self.dX8
-
-
-#
-#
-# def dX1_dt(X):
-# 	return(X[1])
-# def d2X1_dt2(X):
-# 	return(dX2_dt(X))
-#
-# def dX2_dt(X,U=None):
-# 	if U is None:
-# 		return(A*np.sin(X[0]) + B*BIC.R(X[0])*X[2] + B*TRI.R(X[0])*X[3])
-# 	else:
-# 		return(A*np.sin(X[0]) + B*BIC.R(X[0])*U[0] + B*TRI.R(X[0])*U[1])
-# def d2X2_dt2(X):
-# 	return(A*np.cos(X[0])*dX1_dt(X) + B*BIC.dR(X[0])*dX1_dt(X)*X[2] + B*BIC.R(X[0])*dX3_dt(X)\
-# 			+ B*TRI.dR(X[0])*dX1_dt(X)*X[3] + B*TRI.R(X[0])*dX4_dt(X))
-#
-# BIC.add_v_MTU([dX1_dt,dX2_dt])
-# BIC.add_a_MTU([dX1_dt,dX2_dt])
-#
-# TRI.add_v_MTU([dX1_dt,dX2_dt])
-# TRI.add_a_MTU([dX1_dt,dX2_dt])
-#
-# def dX3_dt(X,U=None):
-# 	if U is None:
-# 		return(BIC.KT(X[2])*(BIC.v_MTU(X) - BIC.C1*X[6]))
-# 	else:
-# 		return(BIC.KT(X[2])*(BIC.v_MTU(X) - BIC.C1*U[0]))
-#
-# def dX4_dt(X,U=None):
-# 	if U is None:
-# 		return(TRI.KT(X[3])*(TRI.v_MTU(X) - TRI.C1*X[7]))
-# 	else:
-# 		return(TRI.KT(X[3])*(TRI.v_MTU(X) - TRI.C1*U[1]))
-#
-# def dX5_dt(X):
-# 	return(X[6])
-#
-# def dX6_dt(X):
-# 	return(X[7])
-#
-# def dX7_dt(X,U):
-# 	return(BIC.C2*X[2] - BIC.C3*BIC.F_PE1(X[4],X[6]) - BIC.C4*X[6] + BIC.C5*X[6]**2/X[4] - BIC.C3*BIC.FLV(X[4],X[6])*U[0])
-#
-# def dX8_dt(X,U):
-# 	return(TRI.C2*X[3] - TRI.C3*TRI.F_PE1(X[5],X[7]) - TRI.C4*X[7] + TRI.C5*X[7]**2/X[5] - TRI.C3*TRI.FLV(X[5],X[7])*U[1])
 
 """
 ################################
