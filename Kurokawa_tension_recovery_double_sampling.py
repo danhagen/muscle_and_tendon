@@ -329,7 +329,7 @@ ax2.plot(Time,Kurokawa_Tension-Recovered_Tension,'b')
 ax2.set_title("Error")
 ax2.set_xlabel("Time (ms)")
 ax2.set_ylabel("Error (N)")
-ax2.legend([r"$k^T =$ " + "%.3f" % best_kT + " \n " + r"$c^T =$ " + "%.2f" % best_cT + " \n " + r"$l_{T,o} =$ " + "%.3f" % best_lTo + " \n " + r"$F_{MAX} =$ " + "%.1f" % best_F_MAX])
+ax2.legend([r"$k^T =$ " + "%.3f" % best_kT + " \n " + r"$c^T =$ " + "%.2f" % best_cT + " \n " + r"$l_{T,o} =$ " + "%.3f" % best_lTo + " \n " + r"$L_{r}^T =$ " + "%.1f" % best_LrT])
 
 delay = 2 # timesteps
 Adjusted_Activation = (
