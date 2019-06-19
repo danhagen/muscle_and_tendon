@@ -18,19 +18,19 @@ def return_muscle_activation_from_tension_and_muscle_length(Time,X):
     Activation1 = np.array(
         list(
             map(
-                lambda l1,v1,a1,T1: (
+                lambda l,v,a,T: (
                     (
-                        T1*np.cos(α1)
-                        -m1*(a1 - v1**2*np.tan(α1)/l1)
-                        -F_MAX1*np.cos(α1)**2*(
-                            F_PE1_1([0,0,0,0,l1,0,v1,0])
-                            + bm1*v1
+                        T*np.cos(BIC.pa)
+                        -BIC.m*(a - v**2*np.tan(BIC.pa)**2/l)
+                        -BIC.F_MAX*np.cos(BIC.pa)**2*(
+                            BIC.F_PE1(l,v)
+                            + BIC.bm*v
                         )
                     )
                     / (
-                        F_MAX1
-                        * (np.cos(α1)**2)
-                        * FLV_1([0,0,0,0,l1,0,v1,0])
+                        BIC.F_MAX
+                        * (np.cos(BIC.pa)**2)
+                        * BIC.FLV(l,v)
                     )
                 ),
                 MuscleLength1,
@@ -44,19 +44,19 @@ def return_muscle_activation_from_tension_and_muscle_length(Time,X):
     Activation2 = np.array(
         list(
             map(
-                lambda l2,v2,a2,T2: (
+                lambda l,v,a,T: (
                     (
-                        T2*np.cos(α2)
-                        -m2*(a2 - v2**2*np.tan(α2)/l2)
-                        -F_MAX2*np.cos(α2)**2*(
-                            F_PE1_2([0,0,0,0,0,l2,0,v2])
-                            + bm2*v2
+                        T*np.cos(TRI.pa)
+                        -TRI.m*(a - v**2*np.tan(TRI.pa)**2/l)
+                        -TRI.F_MAX*np.cos(TRI.pa)**2*(
+                            TRI.F_PE1(l,v)
+                            + TRI.bm*v
                         )
                     )
                     / (
-                        F_MAX2
-                        * (np.cos(α2)**2)
-                        * FLV_2([0,0,0,0,0,l2,0,v2])
+                        TRI.F_MAX
+                        * (np.cos(TRI.pa)**2)
+                        * TRI.FLV(l,v)
                     )
                 ),
                 MuscleLength2,

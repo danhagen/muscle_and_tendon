@@ -15,27 +15,27 @@ def return_muscle_length_from_tension(Time,X):
     lm2_o = X[5,0]
 
     MusculotendonLength1 = cumtrapz(
-        [v_MTU1(X[:,i]) for i in range(np.shape(X)[1])],
+        [BIC.v_MTU(X[:,i]) for i in range(np.shape(X)[1])],
         x=Time,
         initial=0
-    ) # integrates v_MTU1 from t=0 to t=i of shape(Time).
+    ) # integrates BIC.v_MTU from t=0 to t=i of shape(Time).
 
     MusculotendonLength2 = cumtrapz(
-        [v_MTU2(X[:,i]) for i in range(np.shape(X)[1])],
+        [TRI.v_MTU(X[:,i]) for i in range(np.shape(X)[1])],
         x=Time,
         initial=0
-    ) # integrates v_MTU2 from t=0 to t=i of shape(Time).
+    ) # integrates TRI.v_MTU from t=0 to t=i of shape(Time).
 
     MuscleLength1 = np.array(
         list(
             map(
                 lambda T1,l_MTU1: (
                     lm1_o
-                    + (l_MTU1-MusculotendonLength1[0])/np.cos(α1)
-                    - kT*lTo1*np.log(
-                        (np.exp(T1/(F_MAX1*kT*cT))-1)
-                        / (np.exp(T1_o/(F_MAX1*kT*cT))-1)
-                    )/np.cos(α1)
+                    + (l_MTU1-MusculotendonLength1[0])/np.cos(BIC.pa)
+                    - BIC.kT*BIC.lTo * np.log(
+                        (np.exp(T1/(BIC.F_MAX*BIC.kT*BIC.cT))-1)
+                        / (np.exp(T1_o/(BIC.F_MAX*BIC.kT*BIC.cT))-1)
+                    ) / np.cos(BIC.pa)
                 ),
                 Tension1,
                 MusculotendonLength1
@@ -47,11 +47,11 @@ def return_muscle_length_from_tension(Time,X):
             map(
                 lambda T2,l_MTU2: (
                     lm2_o
-                    + (l_MTU2-MusculotendonLength2[0])/np.cos(α2)
-                    - kT*lTo2*np.log(
-                        (np.exp(T2/(F_MAX2*kT*cT))-1)
-                        / (np.exp(T2_o/(F_MAX2*kT*cT))-1)
-                    )/np.cos(α2)
+                    + (l_MTU2-MusculotendonLength2[0])/np.cos(TRI.pa)
+                    - TRI.kT*TRI.lTo * np.log(
+                        (np.exp(T2/(TRI.F_MAX*TRI.kT*TRI.cT))-1)
+                        / (np.exp(T2_o/(TRI.F_MAX*TRI.kT*TRI.cT))-1)
+                    ) / np.cos(TRI.pa)
                 ),
                 Tension2,
                 MusculotendonLength2

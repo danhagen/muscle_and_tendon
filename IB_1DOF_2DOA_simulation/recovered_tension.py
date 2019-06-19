@@ -9,16 +9,16 @@ def return_tension_from_muscle_length(Time,X):
     MuscleLength2 = X[5,:]
 
     MusculotendonLength1 = cumtrapz(
-        [v_MTU1(X[:,i]) for i in range(np.shape(X)[1])],
+        [BIC.v_MTU(X[:,i]) for i in range(np.shape(X)[1])],
         x=Time,
         initial=0
-    ) # integrates v_MTU1 from t=0 to t=i of shape(Time).
+    ) # integrates BIC.v_MTU from t=0 to t=i of shape(Time).
 
     MusculotendonLength2 = cumtrapz(
-        [v_MTU2(X[:,i]) for i in range(np.shape(X)[1])],
+        [TRI.v_MTU(X[:,i]) for i in range(np.shape(X)[1])],
         x=Time,
         initial=0
-    ) # integrates v_MTU2 from t=0 to t=i of shape(Time).
+    ) # integrates TRI.v_MTU from t=0 to t=i of shape(Time).
 
     T1_o = X[2,0]
     T2_o = X[3,0]
@@ -26,16 +26,16 @@ def return_tension_from_muscle_length(Time,X):
         list(
             map(
                 lambda lm1,l_MTU1: (
-                    F_MAX1*kT*cT*np.log(
-                        (np.exp(T1_o/(F_MAX1*kT*cT))-1)*np.exp(
+                    (BIC.F_MAX*BIC.kT*BIC.cT) * np.log(
+                        (np.exp(T1_o/(BIC.F_MAX*BIC.kT*BIC.cT))-1) * np.exp(
                             (
                                 l_MTU1
                                 - MusculotendonLength1[0]
-                                - np.cos(α1)*(
+                                - np.cos(BIC.pa)*(
                                     lm1
                                     - MuscleLength1[0]
                                 )
-                            ) / (kT*lTo1)
+                            ) / (BIC.kT*BIC.lTo)
                         )
                         + 1
                     )
@@ -49,16 +49,16 @@ def return_tension_from_muscle_length(Time,X):
         list(
             map(
                 lambda lm2,l_MTU2: (
-                    F_MAX2*kT*cT*np.log(
-                        (np.exp(T2_o/(F_MAX2*kT*cT))-1)*np.exp(
+                    (TRI.F_MAX*TRI.kT*TRI.cT) * np.log(
+                        (np.exp(T2_o/(TRI.F_MAX*TRI.kT*TRI.cT))-1) * np.exp(
                             (
                                 l_MTU2
                                 - MusculotendonLength2[0]
-                                - np.cos(α2)*(
+                                - np.cos(TRI.pa)*(
                                     lm2
                                     - MuscleLength2[0]
                                 )
-                            ) / (kT*lTo2)
+                            ) / (TRI.kT*TRI.lTo)
                         )
                         + 1
                     )
