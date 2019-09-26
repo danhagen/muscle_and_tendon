@@ -4,12 +4,6 @@ from scipy.optimize import fsolve
 
 Activation_Bounds = [[0,1],[0,1]]
 
-def return_constraint_variables(t,X):
-	Coefficient1 = B*BIC.C1*BIC.C3*BIC.R(X[0])*BIC.KT(X[2])*BIC.FLV(X[4],X[6])
-	Coefficient2 = B*TRI.C1*TRI.C3*TRI.R(X[0])*TRI.KT(X[3])*TRI.FLV(X[5],X[7])
-	Constraint = A4(t,X,InitGlobals=True)
-	return(Coefficient1,Coefficient2,Constraint)
-
 def return_random_initial_muscle_lengths_and_activations(InitialTension,X_o,**kwargs):
 	"""
 	This function returns initial muscle lengths and muscle activations for a given pretensioning level, as derived from (***insert file_name here for scratchwork***) for the system that starts from rest. (Ex. pendulum_eqns.reference_trajectories._01).
@@ -35,19 +29,19 @@ def return_random_initial_muscle_lengths_and_activations(InitialTension,X_o,**kw
 
 	InitialAngularAcceleration = kwargs.get(
 		"InitialAngularAcceleration",
-		0
+		d2r(0)
 	) # 0 or d2r(0)
 	assert str(type(InitialAngularAcceleration)) in ["<class 'float'>","<class 'int'>","<class 'numpy.float64'>"], "InitialAngularAcceleration must be either a float or an int."
 
 	InitialAngularJerk = kwargs.get(
 		"InitialAngularJerk",
-		0
+		d3r(0)
 	) # 0 or d3r(0)
 	assert str(type(InitialAngularJerk)) in ["<class 'float'>","<class 'int'>","<class 'numpy.float64'>"], "InitialAngularJerk must be either a float or an int."
 
 	InitialAngularSnap = kwargs.get(
 		"InitialAngularSnap",
-		0
+		d4r(0)
 	) # 0 or d4r(0)
 	assert str(type(InitialAngularSnap)) in ["<class 'float'>","<class 'int'>","<class 'numpy.float64'>"], "InitialAngularSnap must be either a float or an int."
 
@@ -174,12 +168,12 @@ def return_random_initial_muscle_lengths_and_activations(InitialTension,X_o,**kw
 	u2_func = lambda l: (
 		(
 			InitialTension[1]*np.cos(TRI.pa)
-			+ TRI.m*vm1**2*np.tan(TRI.pa)**2/l
-			- TRI.m*am1
-			+ TRI.bm*TRI.F_MAX*np.cos(TRI.pa)**2*vm1
-			- TRI.F_PE1(l,vm1)*TRI.F_MAX*np.cos(TRI.pa)**2
+			+ TRI.m*vm2**2*np.tan(TRI.pa)**2/l
+			- TRI.m*am2
+			+ TRI.bm*TRI.F_MAX*np.cos(TRI.pa)**2*vm2
+			- TRI.F_PE1(l,vm2)*TRI.F_MAX*np.cos(TRI.pa)**2
 		)
-		/ (TRI.FLV(l,vm1)*TRI.F_MAX*np.cos(TRI.pa)**2)
+		/ (TRI.FLV(l,vm2)*TRI.F_MAX*np.cos(TRI.pa)**2)
 	)
 
 	L1_UB = fsolve(u1_func,1.5*BIC.lo)
@@ -484,19 +478,26 @@ def find_viable_initial_values(**kwargs):
 
 	if FixedInitialMuscleLengths is None:
 		L1,U1,L2,U2 = return_random_initial_muscle_lengths_and_activations(T,X_o,**kwargs)
-
 		PositiveActivations = False
 		while PositiveActivations == False:
 			rand_index = np.random.choice(len(L1),2)
 			u1,u2 = U1[rand_index[0]],U2[rand_index[1]]
 			if u1>0 and u2>0:
 				PositiveActivations = True
-
-		if ReturnAll == False:
+		# import ipdb; ipdb.set_trace()
+		if ReturnAll==False:
+			# return(
+			# 	T,
+			# 	np.array([L1[rand_index[0]],L2[rand_index[1]]]),
+			# 	np.array([U1[rand_index[0]],U2[rand_index[1]]])
+			# 	)
+			l1_index = np.where((L1-0.8*BIC.lo)**2==min((L1-0.8*BIC.lo)**2))[0][0]
+			l2_index = np.where((L2-1.2*TRI.lo)**2==min((L2-1.2*TRI.lo)**2))[0][0]
+			# import ipdb; ipdb.set_trace()
 			return(
 				T,
-				np.array([L1[rand_index[0]],L2[rand_index[1]]]),
-				np.array([U1[rand_index[0]],U2[rand_index[1]]])
+				np.array([L1[l1_index],L2[l2_index]]),
+				np.array([U1[l1_index],U2[l2_index]])
 				)
 		else:
 			return(T,L1,L2,U1,U2)

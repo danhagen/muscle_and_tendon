@@ -11,44 +11,6 @@ N = N_seconds*5000 + 1
 Time = np.linspace(0,N_seconds,N)
 dt = Time[1]-Time[0]
 
-def return_U_given_sinusoidal_u1(i,t,X,u1,**kwargs):
-    """
-    Takes in current step (i), numpy.ndarray of time (t) of shape (N,), state numpy.ndarray (X) of shape (8,), and previous input scalar u1 and returns the input U (shape (2,)) for this time step.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    **kwargs
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    1) Bounds - must be a (2,2) list with each row in ascending order. Default is given by Activation_Bounds.
-
-    """
-    import random
-    import numpy as np
-    assert (np.shape(t) == (len(t),)) and (str(type(t)) == "<class 'numpy.ndarray'>"),\
-     	"t must be a numpy.ndarray of shape (len(t),)."
-    assert np.shape(X) == (8,) and str(type(X)) == "<class 'numpy.ndarray'>", "X must be a (8,) numpy.ndarray"
-    assert str(type(u1)) in ["<class 'int'>","<class 'float'>","<class 'numpy.float64'>"], \
-        "u1 must be an int or a float."
-
-    Bounds = kwargs.get("Bounds",Activation_Bounds)
-    assert type(Bounds) == list and np.shape(Bounds) == (2,2), "Bounds for Muscle Activation Control must be a (2,2) list."
-    assert Bounds[0][0]<Bounds[0][1],"Each set of bounds must be in ascending order."
-    assert Bounds[1][0]<Bounds[1][1],"Each set of bounds must be in ascending order."
-
-    Coefficient1,Coefficient2,Constraint1 = return_constraint_variables(t[i],X)
-    assert Coefficient1!=0 and Coefficient2!=0, "Error with Coefficients. Shouldn't both be zero"
-    if Constraint1 < 0:
-    	assert not(Coefficient1 > 0 and Coefficient2 > 0), "Infeasible activations. (Constraint1 < 0, Coefficient1 > 0, Coefficient2 > 0)"
-    if Constraint1 > 0:
-    	assert not(Coefficient1 < 0 and Coefficient2 < 0), "Infeasible activations. (Constraint1 > 0, Coefficient1 < 0, Coefficient2 < 0)"
-
-    u2 = (Constraint1 - Coefficient1*u1)/Coefficient2
-    NextU = np.array([u1,u2])
-
-    assert (Bounds[0][0]<=u1<=Bounds[0][1]) and (Bounds[1][0]<=u2<=Bounds[1][1]), "Error! Choice of u1 results in infeasible activation along backstepping constraint."
-
-    return(NextU)
-
 def run_sim_IB_sinus_act(**kwargs):
     """
     Runs one simulation for INTEGRATOR BACKSTEPPING SINUSOIDAL INPUT control.
@@ -70,14 +32,24 @@ def run_sim_IB_sinus_act(**kwargs):
     6) Freq - scalar value given in Hz.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    **kwargs (Passed to initialize_tendon_tension())
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    7) ReturnMultipleInitialTensions - must be either True or False. Default is False.
+
+    8) Seed - must be a float or an int. Default is None (seeded by current time).
+
+    9) Return - must be either true or false (default). When false, function will assign the initial tension value to self.
+
+    10) TensionBounds - must be a list of size (2,2) or None (in which case the self.TensionBounds will be used)
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     **kwargs (Passed to find_viable_initial_values())
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    7) InitialAngularAcceleration - must be either a numpy.float64, float, or int. Default is set to 0 to simulate starting from rest. Choice of reference trajectory *should* not matter as it is either 0 or d2r(0) (either by convention or by choice).
+    11) FixedInitialMuscleLengths - must be a list of length 2 or None (Default). If is None, then find_viable_initial_values() will assign this value randomly. Used for trials where we wish to hold muscle length constant for different tension levels.
 
-    8) InitialAngularSnap - must be either a numpy.float64, float, or int. Default is set to 0 to simulate starting from rest. Choice of reference trajectory *should* not matter as it is either 0 or d4r(0) (either by convention or by choice).
-
-    9) FixedInitialMuscleLengths - must be a list of length 2 or None (Default). If is None, then program will assign this value randomly. Used for trials where we wish to hold muscle length constant for different tension levels.
+    12) Seed - must be a float or an int. Default is None (seeded by current time).
 
     """
 
@@ -95,45 +67,62 @@ def run_sim_IB_sinus_act(**kwargs):
     assert type(Freq) in [int,float], "Freq should be an int or a float."
 
     ICs = kwargs.get("ICs",None)
+
+    TensionBounds = kwargs.get("TensionBounds",None)
+    Seed = kwargs.get("Seed",None)
+
     AnotherIteration = True
     AttemptNumber = 1
 
     while AnotherIteration == True:
-        X = np.zeros((8,N))
+        Plant = Pendulum_1DOF_2DOA(BIC,TRI,Time)
+        # should combine to one function now.
+        Plant.initialize_tendon_tension(
+            Seed=Seed,
+            Bounds=TensionBounds
+        )
         if ICs is None:
-            InitialTension,InitialMuscleLengths,InitialActivations = \
-            	find_viable_initial_values(**kwargs)
-            X[:,0] = [
-            	r(0),
-            	dr(0),
-            	InitialTension[0][0],
-            	InitialTension[1][0],
-            	InitialMuscleLengths[0],
-            	InitialMuscleLengths[1],
-            	0,
-            	0]
-            X_o = X[:,0]
+            Plant.find_viable_initial_values(**kwargs)
+            Plant.set_X_o()
+            Plant.set_U_o()
         else:
             assert ((len(ICs)==2)
                     and (np.shape(ICs[0])==(8,))
                     and (np.shape(ICs[1])==(2,))), \
                 "ICs must be a list that contains X_o (of shape (8,)) and U_o (of shape (2,))."
-            X[:,0] = ICs[0]
-            X_o = X[:,0]
-            InitialActivations = ICs[1]
+            Plant.set_X_o(ICs[0])
+            Plant.set_U_o(ICs[1])
 
         U = np.zeros((2,N))
         if Amp is "Scaled":
-            Amp = 0.25*InitialActivations[0]
+            Amp = 0.75*Plant.U_o[0]
+            # Amp1 = 0.1
+            # Amp2 = 0.50*InitialActivations[0]
+            # assert InitialActivations[0]<0.15, "InitialActivations too high."
+            # Amp2 = 0.6
+        # assert (Amp1>=0) and (Amp2>=0), "Amp became negative. Run Again."
         assert Amp>0, "Amp became negative. Run Again."
 
-        U[0,:] = InitialActivations[0] + Amp*(np.cos(2*np.pi*Freq*Time)-1)
-        U[1,0] = InitialActivations[1]
+        # phase1 = np.ones(np.shape(Time))*(np.array([np.sin(2*np.pi*Time)])>0)
+        # phase2 = np.ones(np.shape(Time))*(np.array([np.sin(2*np.pi*Time)])<=0)
+        # U[0,:] = (
+        #     InitialActivations[0]
+        #     + (Amp1*(1-np.cos(4*np.pi*Time))/2)*phase1
+        #     + (Amp2*(1-np.cos(4*np.pi*Time))/2)*phase2
+        # )
+        # U[0,:] = U[0,:]*(U[0,:]>=0)
+        # import ipdb; ipdb.set_trace()
+        shift = 3*np.pi/16
+        U[0,:] = (
+            Plant.U_o[0]
+            - Amp*np.sin(2*np.pi*Freq*Time+shift)
+        )
+        # U[0,:] = InitialActivations[0] + Amp*(1-np.cos(4*np.pi*Freq*Time))/2
+        U[1,0] = Plant.U_o[1]
         U_o = U[:,0]
-
-        Plant = Pendulum_1DOF_2DOA(BIC,TRI,X_o,U_o,Time)
+        #########
+        # Plant = Pendulum_1DOF_2DOA(BIC,TRI,X_o,U_o,Time)
         Plant.U[0,:] = U[0,:]
-
         try:
             cprint("Attempt #" + str(int(AttemptNumber)) + ":\n", 'green')
             statusbar = dsb(0,N-1,title=run_sim_IB_sinus_act.__name__)
@@ -141,6 +130,7 @@ def run_sim_IB_sinus_act(**kwargs):
                 Plant.update_pendulum_variables(i)
                 Plant.forward_integrate(i)
                 statusbar.update(i)
+
             AnotherIteration = False
             return(Plant.X,Plant.U)
         except:

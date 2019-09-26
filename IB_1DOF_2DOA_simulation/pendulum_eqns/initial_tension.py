@@ -7,7 +7,7 @@ if params["g"] == 0:
 	Tension_Bounds = [[0,BIC.F_MAX],[0,TRI.F_MAX]]
 else:
 	MaxStep_Tension = 0.01**min(BIC.F_MAX,TRI.F_MAX) # percentage of positive maximum.
-	Tension_Bounds = [[0,BIC.F_MAX],[0,0.10*TRI.F_MAX]]
+	Tension_Bounds = [[0,BIC.F_MAX],[0,0.30*TRI.F_MAX]]
 
 def return_initial_tension(X_o,**kwargs):
 	"""
@@ -204,7 +204,7 @@ def return_initial_tension_acceleration(T_o,dT_o,X_o,**kwargs):
 			(
 				(params["M"]*params["L"]**2/3)*InitialAngularSnap
 				+ params["M"]*params["g"]*params["L"]*(
-					InitialAngularAcceleration*np.cos(X_o)
+					InitialAngularAcceleration*np.cos(X_o[0])
 					- X_o[1]**2*np.sin(X_o[0])
 				)/2
 				- X_o[1]**2 * (
@@ -224,7 +224,6 @@ def return_initial_tension_acceleration(T_o,dT_o,X_o,**kwargs):
 		)
 		* np.array([BIC.R(X_o[0]),TRI.R(X_o[0])])
 	)
-
 	return(ParticularSolution+HomogeneousSolution)
 
 def plot_initial_tension_values(X_o,**kwargs):
@@ -284,11 +283,11 @@ def plot_initial_tension_values(X_o,**kwargs):
 		1001)
 	Input2 = Constraint(Input1)
 	ax1.plot(Input1,Input2,'r',lw=2)
-	statusbar = dsb()
+	statusbar = dsb(0,NumberOfPoints,title=plot_initial_tension_values.__name__)
 	for i in range(NumberOfPoints):
 		T = return_initial_tension(X_o,**kwargs)
 		ax1.plot(T[0],T[1],'go')
-		statusbar.update(i,NumberOfPoints,title=plot_initial_tension_values.__name__)
+		statusbar.update(i)
 	ax1.set_xlabel(r'$T_{1}$',fontsize=14)
 	ax1.set_ylabel(r'$T_{2}$',fontsize=14)
 	ax1.set_xlim([Input1[0],Input1[-1]])

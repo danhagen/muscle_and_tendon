@@ -5,32 +5,32 @@ from recovered_activation import *
 from danpy.useful_functions import *
 from danpy.sb import dsb,get_terminal_width
 import pickle
-
-X_o = np.array([r(0),dr(0)])
-InitialTension = return_initial_tension(
-    X_o,
-    ReturnMultipleInitialTensions=False,
-    Seed=2,
-    Bounds = [[0,0.4*BIC.F_MAX],[0,0.4*TRI.F_MAX]],
-    InitialAngularAcceleration=d2r(0),
-    Return_k = False
-)
-InitialTensionVelocity = return_initial_tension_velocity(
-    InitialTension,
-    X_o,
-    InitialAngularAcceleration=d2r(0),
-    InitialAngularJerk=d2r(0),
-    ParticularSolution=np.array([0,0])
-)
-InitialTensionAcceleration = return_initial_tension_acceleration(
-    InitialTension,
-    InitialTensionVelocity,
-    X_o,
-    InitialAngularAcceleration=d2r(0),
-    InitialAngularJerk = d3r(0),
-    InitialAngularSnap = d4r(0),
-    ParticularSolution=np.array([0,0])
-)
+#
+# X_o = np.array([r(0),dr(0)])
+# InitialTension = return_initial_tension(
+#     X_o,
+#     ReturnMultipleInitialTensions=True,
+#     Seed=None,
+#     Bounds = [[0,0.2*BIC.F_MAX],[0,0.2*TRI.F_MAX]],
+#     InitialAngularAcceleration=d2r(0)
+# )
+# InitialTension = InitialTension[5]
+# InitialTensionVelocity = return_initial_tension_velocity(
+#     InitialTension,
+#     X_o,
+#     InitialAngularAcceleration=d2r(0),
+#     InitialAngularJerk=d3r(0),
+#     ParticularSolution=np.array([0,0])
+# )
+# InitialTensionAcceleration = return_initial_tension_acceleration(
+#     InitialTension,
+#     InitialTensionVelocity,
+#     X_o,
+#     InitialAngularAcceleration=d2r(0),
+#     InitialAngularJerk = d3r(0),
+#     InitialAngularSnap = d4r(0),
+#     ParticularSolution=np.array([0,0])
+# )
 
 TerminalWidth = get_terminal_width()
 ####################################################
@@ -46,18 +46,10 @@ try:
         )
 
     X,U = run_sim_IB_sinus_act(
-        FixedInitialTension=InitialTension,
         Amp="Scaled",
         Freq=1,
-        InitialAngularAcceleration=d2r(0),
-        InitialAngularJerk=d3r(0),
-        InitialAngularSnap=d4r(0),
-        InitialTensionVelocity=InitialTensionVelocity,
-        InititailTensionAcceleration=InitialTensionAcceleration,
-        ICs = None
+        TensionBounds = [[0,0.2*BIC.F_MAX],[0,0.2*TRI.F_MAX]]
     )
-    Period = 2*np.pi/Freq
-    Modulo_IC_Indices = list(np.where(Time%Period==0)[0])[1:]
 
     if (X==np.zeros((8,len(Time)))).all():
         raise ValueError("Trial Failed... Try Again!")
@@ -153,34 +145,36 @@ cax4, _ = matplotlib.colorbar.make_axes(ax4)
 cbar4 = matplotlib.colorbar.ColorbarBase(cax4, cmap=cmap, norm=normalize)
 cax4.set_ylabel(r"$c^T$",fontsize=14)
 
-# VelocityError1 = np.array(
-#     list(
-#         map(
-#             lambda T,dT: (
-#                 (BIC.lTo/BIC.lo)/(BIC.F_MAX*BIC.cT)
-#                 * dT
-#                 / (
-#                     1
-#                     - np.exp(-T/(BIC.F_MAX*BIC.cT*BIC.kT))
-#                 )
-#             ),
-#             X[2,1:],
-#             np.gradient(X[2,:],Time)
-#         )
-#     )
-# )
-# fig,[ax5,ax6] = plt.subplots(2,figsize=[12,7])
-#
-# ax5.scatter(X[6,5000:10001]/BIC.lo,VelocityError1[5000:10001],c=Time[5000:10001],cmap=cmap,norm=plt.Normalize(Time[5000],Time[10001]))
-#
-# ax6.scatter(Time[5000:10001],X[6,5000:10001]/BIC.lo,c=Time[5000:10001],cmap=cmap,norm=plt.Normalize(Time[5000],Time[10001]))
-#
-# ax5.set_xlabel(r"Norm. Muscle Velocity $\hat{l}_o/s$")
-# ax5.set_ylabel(r"Norm. Velocity Error $\hat{l}_o/s$")
-# ax6.set_xticks([Time[5001],Time[6251],Time[7501],Time[8751],Time[10001]])
-# ax6.set_xticklabels([r"$0$",r"$\frac{\pi}{2}$",r"$\pi$",r"$\frac{3\pi}{2}$",r"$\pi$"])
-# ax6.set_xlabel("Phase")
-# ax6.set_ylabel(r"Norm. Muscle Velocity $\hat{l}_o/s$")
+VelocityError1 = np.array(
+    list(
+        map(
+            lambda T,dT: (
+                (BIC.lTo/BIC.lo)/(BIC.F_MAX*BIC.cT)
+                * dT
+                / (
+                    1
+                    - np.exp(-T/(BIC.F_MAX*BIC.cT*BIC.kT))
+                )
+            ),
+            X[2,1:],
+            np.gradient(X[2,:],Time)
+        )
+    )
+)
+
+cmap2 = matplotlib.colors.LinearSegmentedColormap.from_list("", ["blue","green","yellow","yellow","red","blue"])
+fig,[ax5,ax6] = plt.subplots(2,figsize=[12,7])
+
+ax5.scatter(X[6,5000:10001]/BIC.lo,VelocityError1[5000:10001],c=Time[5000:10001],cmap=cmap2,norm=plt.Normalize(Time[5000],Time[10001]))
+
+ax6.scatter(Time[5000:10001],X[6,5000:10001]/BIC.lo,c=Time[5000:10001],cmap=cmap2,norm=plt.Normalize(Time[5000],Time[10001]))
+
+ax5.set_xlabel(r"Norm. Muscle Velocity $\hat{l}_o/s$")
+ax5.set_ylabel(r"Norm. Velocity Error $\hat{l}_o/s$")
+ax6.set_xticks([Time[5001],Time[6251],Time[7501],Time[8751],Time[10001]])
+ax6.set_xticklabels([r"$0$",r"$\frac{\pi}{2}$",r"$\pi$",r"$\frac{3\pi}{2}$",r"$\pi$"])
+ax6.set_xlabel("Phase")
+ax6.set_ylabel(r"Norm. Muscle Velocity $\hat{l}_o/s$")
 # plt.show()
 
 params["Muscle 1"] = BIC.__dict__
@@ -201,8 +195,7 @@ FormatedSaveData = {
     "Default X" : X,
     "Default U" : U,
     "Muscle 1 Lengths" : MuscleLength1,
-    "Muscle 2 Lengths" : MuscleLength2,
-    "Initial Tension" : InitialTension
+    "Muscle 2 Lengths" : MuscleLength2
 }
 pickle.dump(
     FormatedSaveData,
