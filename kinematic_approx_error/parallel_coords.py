@@ -77,7 +77,7 @@ Pennation_max = 40*np.pi/180
 Pennation = []
 
 Slack_Opt_Ratio_min = 0.1
-Slack_Opt_Ratio_max = 10
+Slack_Opt_Ratio_max = 11.25
 Slack_Opt_Ratio = []
 
 MVC = []
@@ -126,6 +126,7 @@ while count<numTrials:
         Slack_Opt_Ratio_max
     )
     pennation_rand = np.random.uniform(Pennation_min,Pennation_max)
+    # pennation_rand = 0
     mvc_rand = np.random.uniform(
         initial_force/np.cos(pennation_rand),
         1
@@ -160,26 +161,26 @@ while count<numTrials:
 if min(Error)>-np.floor((1/l_Ts_over_l_To - 1)*Slack_Opt_Ratio_max/0.1)*0.1:
     errorTickVals = list(
         np.arange(
-            -np.floor((1/l_Ts_over_l_To - 1)*Slack_Opt_Ratio_max/0.1)*0.1,
+            -100*np.floor((1/l_Ts_over_l_To - 1)*Slack_Opt_Ratio_max/0.1)*0.1,
             1e-7,
-            0.1
+            100*0.1
         )
     )
     errorTickLabels = ["{0:.2f}".format(el) for el in errorTickVals]
     errorTickLabels[-1]="0"
     errorConstraintRange = [
-        -np.floor((1/l_Ts_over_l_To - 1)*Slack_Opt_Ratio_max/0.1)*0.1 + 0.2,
-        -np.floor((1/l_Ts_over_l_To - 1)*Slack_Opt_Ratio_max/0.1)*0.1
+        -100*np.floor((1/l_Ts_over_l_To - 1)*Slack_Opt_Ratio_max/0.1)*0.1 + 20,
+        -100*np.floor((1/l_Ts_over_l_To - 1)*Slack_Opt_Ratio_max/0.1)*0.1
     ]
 else:
     errorTickVals = list(
         np.concatenate(
             [
-                [min(Error)],
+                [100*min(Error)],
                 np.arange(
-                    -np.floor((1/l_Ts_over_l_To - 1)*Slack_Opt_Ratio_max/0.1)*0.1,
+                    -100*np.floor((1/l_Ts_over_l_To - 1)*Slack_Opt_Ratio_max/0.1)*0.1,
                     1e-7,
-                    0.1
+                    100*0.1
                 )
             ]
         )
@@ -188,20 +189,20 @@ else:
     errorTickLabels[0]=""
     errorTickLabels[-1]="0"
     errorConstraintRange = [
-        min(Error)+0.2,
-        min(Error)
+        100*min(Error)+20,
+        100*min(Error)
     ]
 
 Error_dict = dict(
+    constraintrange = [-50,-40],
     range = [
-        min(Error),
+        100*min(Error),
         0
     ],
-    tickvals = errorTickVals,
-    ticktext = errorTickLabels,
-    label = 'Norm. Fascicle Length Error',
-    values = list(np.array(Error)),
-    constraintrange = errorConstraintRange
+    # tickvals = errorTickVals,
+    # ticktext = errorTickLabels,
+    label = 'Percent Fascicle Length Error',
+    values = list(100*np.array(Error))
 )
 
 ################################################
@@ -209,29 +210,24 @@ Error_dict = dict(
 ################################################
 
 curvatureTickVals = list(
-    np.concatenate(
-        [
-            np.arange(
-                0,
-                kT_intersection + 1e-7,
-                0.001
-            ),
-            [kT_intersection]
-        ]
+    np.arange(
+        0,
+        np.ceil(kT_intersection/0.001)*0.001 + 1e-7,
+        0.001
     )
 )
 curvatureTickLabels = ["{0:.3f}".format(el) for el in curvatureTickVals]
 curvatureTickLabels[0] = "0"
-curvatureTickLabels[-1] = ""
+# curvatureTickLabels[-1] = ""
 
 Curvature_dict = dict(
     range = [
         0,
         kT_intersection
     ],
-    tickvals = curvatureTickVals,
-    ticktext = curvatureTickLabels,
-    label = 'Radius of Curvature Constant',
+    # tickvals = curvatureTickVals,
+    # ticktext = curvatureTickLabels,
+    label = 'Tendon Radius of Curvature Constant',
     values = KT
 )
 
@@ -241,8 +237,8 @@ Curvature_dict = dict(
 
 Stiffness_dict = dict(
     range = [20,100],
-    tickvals = [20,30,40,50,60,70,80,90,100],
-    label = 'Norm. Asymptotic Stiffness',
+    # tickvals = [20,30,40,50,60,70,80,90,100],
+    label = 'Norm. Asymptotic Tendon Stiffness',
     values = CT
 )
 
@@ -250,18 +246,21 @@ Stiffness_dict = dict(
 ###### SLACK/OPTIMAL RATIO DICT FOR PARALLEL COORDS ######
 ##########################################################
 
+RatioTickVals = list(
+    np.arange(
+        0,
+        Slack_Opt_Ratio_max +1e-3,
+        2
+    )
+)
+RatioTickVals.append(Slack_Opt_Ratio_max)
+
 Ratio_dict = dict(
     range = [
         0,
         Slack_Opt_Ratio_max
     ],
-    tickvals = list(
-        np.arange(
-            0,
-            Slack_Opt_Ratio_max + 1e-3,
-            2
-        )
-    ),
+    # tickvals = RatioTickVals,
     label = 'Tendon Slack Length/Optimal Fascicle Length',
     values = Slack_Opt_Ratio
 )
@@ -275,13 +274,13 @@ Pennation_dict = dict(
         180*Pennation_min/np.pi,
         180*Pennation_max/np.pi
     ],
-    tickvals = list(
-        np.arange(
-            180*Pennation_min/np.pi,
-            180*Pennation_max/np.pi + 1e-3,
-            5
-        )
-    ),
+    # tickvals = list(
+    #     np.arange(
+    #         180*Pennation_min/np.pi,
+    #         180*Pennation_max/np.pi + 1e-3,
+    #         5
+    #     )
+    # ),
     label = 'Pennation Angle (deg.)',
     values = list(180*np.array(Pennation)/np.pi)
 )
@@ -297,7 +296,7 @@ MVC_dict = dict(
     ],
     label = 'Percent MVC',
     values = list(100*np.array(MVC)),
-    tickvals = list(np.linspace(0,100,11))
+    # tickvals = list(np.linspace(0,100,11))
 )
 
 
@@ -317,9 +316,11 @@ fig = go.Figure(data=
             Stiffness_dict,
             Curvature_dict,
             Ratio_dict,
+            Pennation_dict,
             MVC_dict
         ])
     )
 )
-fig.write_image("Figures/High_error_PC.pdf")
+# fig.show()
+# fig.write_image("Figures/High_error_PC_2.pdf")
 fig.write_html('tendon_length_change_parallel_coords.html', auto_open=True)
