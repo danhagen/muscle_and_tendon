@@ -229,7 +229,7 @@ ax.plot(constraint_cT,constraint_kT,'k')
 # )
 plt.close(fig)
 
-fig2 = plt.figure(figsize=(10,3))
+fig2 = plt.figure(figsize=(12,5))
 stuff = pickle.load(open("Figures/Iso_Error_PC/v3/data.pkl","rb"))
 cmap = matplotlib.cm.get_cmap('viridis')
 normalize_to_tendon_opt_slack_ratio = matplotlib.colors.Normalize(
@@ -312,4 +312,12 @@ cax.set_yticklabels(
         )
     ]
 )
-plt.show()
+
+save_figures(
+    "./Figures/feasible_cTkT/",
+    "fT_lT_plot_from_cT_kT_range",
+    {},
+    figs=[fig2],
+    SaveAsPDF=True
+)
+plt.close(fig2)
